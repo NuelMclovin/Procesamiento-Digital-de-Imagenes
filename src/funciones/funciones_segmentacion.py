@@ -36,20 +36,33 @@ def entropia_kapur(histograma, total_pixceles):
     max_entropia = -1
     umbral_optimo = 0
     
-    for t in range(255):
-        clase1 = histograma[:t]
-        clase2 = histograma[t:]
+    # Probabilidades normalizadas
+    prob = histograma / total_pixceles
+    
+    for t in range(1, 255):  # Empezar en 1 para evitar clases vacías
+        # Probabilidades acumuladas
+        w0 = np.sum(prob[:t])
+        w1 = np.sum(prob[t:])
         
-        p1 = np.sum(clase1) / total_pixceles
-        p2 = np.sum(clase2) / total_pixceles
-        
-        if p1 == 0 or p2 == 0:
+        if w0 == 0 or w1 == 0:
             continue
         
-        h1 = -np.sum((clase1 / np.sum(clase1)) * np.log(clase1 / np.sum(clase1) + 1e-10))
-        h2 = -np.sum((clase2 / np.sum(clase2)) * np.log(clase2 / np.sum(clase2) + 1e-10))
+        # Entropía de la clase 0 (fondo)
+        h0 = 0
+        for i in range(t):
+            if prob[i] > 0:
+                p_i_w0 = prob[i] / w0
+                h0 -= p_i_w0 * np.log(p_i_w0)
         
-        entropia_total = p1 * h1 + p2 * h2
+        # Entropía de la clase 1 (objeto)
+        h1 = 0
+        for i in range(t, 256):
+            if prob[i] > 0:
+                p_i_w1 = prob[i] / w1
+                h1 -= p_i_w1 * np.log(p_i_w1)
+        
+        # Entropía total (SIN multiplicar por w0 y w1)
+        entropia_total = h0 + h1
         
         if entropia_total > max_entropia:
             max_entropia = entropia_total
