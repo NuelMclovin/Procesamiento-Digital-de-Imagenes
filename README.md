@@ -115,14 +115,6 @@ El proyecto utiliza una arquitectura modular con:
 
 ## Autor
 
-**Emanuel Mejía Pérez**  
+**Comunidad Numero 3**  
 ESCOM - IPN  
 Procesamiento Digital de Imágenes - 4BM2
-
-## Licencia
-
-Este proyecto fue desarrollado con fines educativos.
-
----
-
-Si te fue útil, considera darle una estrella al repositorio
