@@ -2,7 +2,7 @@
 
 Aplicación de escritorio para procesamiento de imágenes desarrollada con **Python**, **PySide6** y **OpenCV**.
 
-## 🎯 Características
+## Características
 
 - **Interfaz gráfica modular** con secciones desplegables
 - **Gestión de imágenes**: Cargar, guardar y visualizar hasta 2 imágenes simultáneamente
@@ -16,7 +16,7 @@ Aplicación de escritorio para procesamiento de imágenes desarrollada con **Pyt
 - **Análisis de componentes conexas**
 - **Visualización de histogramas** en tiempo real
 
-## 🛠️ Tecnologías
+## Tecnologías
 
 - **Python 3.11+**
 - **PySide6** - Interfaz gráfica
@@ -25,7 +25,7 @@ Aplicación de escritorio para procesamiento de imágenes desarrollada con **Pyt
 - **Matplotlib** - Generación de histogramas
 - **SciPy** - Análisis de señales
 
-## 📦 Instalación
+## Instalación
 
 1. Clona el repositorio:
 ```bash
@@ -38,14 +38,14 @@ cd Procesamiento-Digital-de-Imagenes
 pip install -r requerimeintos.txt
 ```
 
-## 🚀 Uso
+## Uso
 
 Ejecuta la aplicación:
 ```bash
 python main.py
 ```
 
-## 📁 Estructura del Proyecto
+## Estructura del Proyecto
 
 ```
 Ruido Final/
@@ -79,7 +79,7 @@ Ruido Final/
 │       └── seccion_segmentacion.py
 ```
 
-## 🎨 Arquitectura Modular
+## Arquitectura Modular
 
 El proyecto utiliza una arquitectura modular con:
 - **Separación de responsabilidades**: Procesamiento e interfaz en módulos independientes
@@ -87,7 +87,7 @@ El proyecto utiliza una arquitectura modular con:
 - **Hub de importación**: `funciones_procesamiento.py` re-exporta todas las funciones
 - **35 funciones** de procesamiento organizadas por categoría
 
-## 📸 Funcionalidades Principales
+## Funcionalidades Principales
 
 ### Generación de Ruido
 - Ruido Sal y Pimienta (configurable)
@@ -113,16 +113,16 @@ El proyecto utiliza una arquitectura modular con:
 - Múltiples umbrales
 - Umbral por banda
 
-## 👨‍💻 Autor
+## Autor
 
 **Emanuel Mejía Pérez**  
 ESCOM - IPN  
 Procesamiento Digital de Imágenes - 4BM2
 
-## 📄 Licencia
+## Licencia
 
 Este proyecto fue desarrollado con fines educativos.
 
 ---
 
-⭐ Si te fue útil, considera darle una estrella al repositorio
+Si te fue útil, considera darle una estrella al repositorio
