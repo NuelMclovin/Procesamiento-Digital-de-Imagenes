@@ -96,6 +96,7 @@ def segmentacion_kapur(imagen):
 def segmentacion_minimo_histograma(imagen):
     """
     Aplica segmentación por método del mínimo del histograma.
+    Encuentra el mínimo entre los dos picos más prominentes.
     
     Args:
         imagen: Imagen de entrada
@@ -103,18 +104,33 @@ def segmentacion_minimo_histograma(imagen):
     Returns:
         Tupla (imagen_segmentada, umbral_utilizado)
     """
-    from scipy.signal import find_peaks as fp
+    from scipy.signal import find_peaks
+    from scipy.ndimage import gaussian_filter1d
     
     if len(imagen.shape) == 3:
         imagen = cv2.cvtColor(imagen, cv2.COLOR_BGR2GRAY)
     
     histograma, _ = np.histogram(imagen, bins=256, range=(0, 256))
     
-    picos, _ = fp(histograma, distance=20)
+    # Suavizar histograma para mejor detección de picos
+    histograma_suavizado = gaussian_filter1d(histograma.astype(float), sigma=2)
+    
+    # Encontrar picos con prominencia mínima
+    picos, propiedades = find_peaks(histograma_suavizado, prominence=np.max(histograma_suavizado)*0.1)
+    
     if len(picos) >= 2:
-        minimo = np.argmin(histograma[picos[0]:picos[1]]) + picos[0]
+        # Ordenar picos por prominencia (altura)
+        prominencias = propiedades['prominences']
+        indices_ordenados = np.argsort(prominencias)[::-1]
+        dos_picos_principales = np.sort(picos[indices_ordenados[:2]])
+        
+        # Buscar el mínimo entre los dos picos principales
+        region = histograma_suavizado[dos_picos_principales[0]:dos_picos_principales[1]+1]
+        minimo = np.argmin(region) + dos_picos_principales[0]
     else:
-        minimo = 127  # Valor por defecto
+        # Fallback: usar método de Otsu si no hay picos claros
+        minimo, _ = cv2.threshold(imagen, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        minimo = int(minimo)
     
     imagen_segmentada = (imagen > minimo).astype(np.uint8) * 255
     
