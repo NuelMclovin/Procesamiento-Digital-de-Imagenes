@@ -9,9 +9,9 @@ Integra todas las funcionalidades de procesamiento de imágenes:
 - Operaciones lógicas (AND, OR, XOR, NOT)
 - Generación de ruido (Sal y Pimienta, Gaussiano)
 - Aplicación de filtros de restauración
-- Análisis de componentes conexas
 - Ajuste de brillo (7 técnicas de ecualización)
 - Segmentación (6 técnicas de umbralización)
+- Análisis de componentes conexas (etiquetado y coloreo)
 """
 
 import sys

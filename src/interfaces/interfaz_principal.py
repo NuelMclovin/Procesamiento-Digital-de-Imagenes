@@ -33,7 +33,9 @@ from src.funciones.funciones_procesamiento import (
     ecualizacion_hipercubica, ecualizacion_logaritmica_hiperbolica,
     funcion_potencia, correccion_gamma,
     segmentacion_otsu, segmentacion_kapur, segmentacion_minimo_histograma,
-    segmentacion_media, segmentacion_multiples_umbrales, segmentacion_umbral_banda
+    segmentacion_media, segmentacion_multiples_umbrales, segmentacion_umbral_banda,
+    etiquetar_componentes, extraer_componente_mas_grande, colorear_etiquetas,
+    comparar_segmentaciones, dibujar_regiones_numeradas
 )
 
 # Importar secciones modulares
@@ -45,6 +47,7 @@ from src.interfaces.seccion_filtros import SeccionFiltros
 from src.interfaces.seccion_umbral import SeccionUmbral
 from src.interfaces.seccion_brillo import SeccionBrillo
 from src.interfaces.seccion_segmentacion import SeccionSegmentacion
+from src.interfaces.seccion_componentes import SeccionComponentes
 from src.interfaces.seccion_modos import SeccionModos
 
 
@@ -148,6 +151,9 @@ class VentanaPrincipal(QMainWindow):
         
         panel_layout.addWidget(self._crear_separador_horizontal())
         panel_layout.addWidget(SeccionSegmentacion(self))
+        
+        panel_layout.addWidget(self._crear_separador_horizontal())
+        panel_layout.addWidget(SeccionComponentes(self))
         
         panel_layout.addWidget(self._crear_separador_horizontal())
         panel_layout.addWidget(SeccionModos(self))
@@ -757,7 +763,7 @@ class VentanaPrincipal(QMainWindow):
 
 
 def main():
-    """Funci�n principal para ejecutar la aplicaci�n"""
+    """Funcion principal para ejecutar la aplicacion"""
     app = QApplication(sys.argv)
     ventana = VentanaPrincipal()
     ventana.show()
