@@ -2,7 +2,7 @@
 Sección de análisis de componentes conexas.
 """
 
-from PySide6.QtWidgets import QLabel, QHBoxLayout, QSpinBox, QMessageBox, QComboBox
+from PySide6.QtWidgets import QLabel, QHBoxLayout, QSpinBox, QMessageBox, QComboBox, QCheckBox
 import cv2
 import numpy as np
 from src.interfaces.seccion_base import SeccionBase
@@ -10,10 +10,11 @@ from src.interfaces.dialogos_base import DialogoBase
 from src.config import COLOR_ADVERTENCIA, COLOR_TEXT_PRIMARY, COLOR_CARD, COLOR_BORDER
 from src.funciones.funciones_procesamiento import (
     etiquetar_componentes,
-    extraer_componente_mas_grande,
     colorear_etiquetas,
-    comparar_segmentaciones,
-    dibujar_regiones_numeradas
+    dibujar_regiones_numeradas,
+    preprocesar_imagen,
+    filtrar_componentes_pequenas,
+    obtener_estadisticas_componentes
 )
 
 
@@ -33,15 +34,6 @@ class SeccionComponentes(SeccionBase):
         
         self.crear_boton("Colorear Etiquetas", COLOR_ADVERTENCIA, 
                         lambda: self.colorear_componentes())
-        
-        self.crear_boton("Componente Mayor", COLOR_ADVERTENCIA, 
-                        lambda: self.extraer_mayor())
-        
-        self.crear_boton("Regiones Numeradas", COLOR_ADVERTENCIA, 
-                        lambda: self.mostrar_regiones_numeradas())
-        
-        self.crear_boton("Comparar Segm.", COLOR_ADVERTENCIA, 
-                        lambda: self.comparar_segmentacion())
     
     def mostrar_dialogo_etiquetar(self):
         """Muestra diálogo para etiquetar componentes conexas"""
@@ -81,14 +73,42 @@ class SeccionComponentes(SeccionBase):
         conectividad_layout.addWidget(conectividad_combo, 1)
         dialogo.layout_principal.addLayout(conectividad_layout)
         
+        # Checkbox para preprocesamiento morfológico
+        morfo_checkbox = QCheckBox("Aplicar preprocesamiento morfológico (eliminar ruido)")
+        morfo_checkbox.setChecked(True)
+        morfo_checkbox.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-weight: bold;")
+        dialogo.layout_principal.addWidget(morfo_checkbox)
+        
+        # Filtrado por área mínima
+        area_layout = QHBoxLayout()
+        area_label = QLabel("Área mínima (píxeles):")
+        area_label.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-weight: bold;")
+        
+        area_spinbox = QSpinBox()
+        area_spinbox.setRange(0, 10000)
+        area_spinbox.setValue(50)
+        area_spinbox.setStyleSheet(f"""
+            QSpinBox {{
+                background: {COLOR_CARD};
+                color: {COLOR_TEXT_PRIMARY};
+                border: 2px solid {COLOR_BORDER};
+                border-radius: 6px;
+                padding: 6px;
+            }}
+        """)
+        
+        area_layout.addWidget(area_label)
+        area_layout.addWidget(area_spinbox, 1)
+        dialogo.layout_principal.addLayout(area_layout)
+        
         # Información mejorada
         info_label = QLabel(
             " IMPORTANTE:\n"
-            "• La imagen se convertirá automáticamente a binaria\n"
-            "• Se aplicará umbral 127 si la imagen no es binaria\n"
-            "• Se detectarán regiones blancas como componentes\n"
-            "• Conectividad 4: solo vecinos arriba/abajo/izq/der\n"
-            "• Conectividad 8: incluye vecinos diagonales"
+            "• La imagen se invertirá para detectar objetos oscuros\n"
+            "• El preprocesamiento morfológico elimina ruido pequeño\n"
+            "• El filtro de área elimina componentes muy pequeñas\n"
+            "• Conectividad 4: solo vecinos laterales\n"
+            "• Conectividad 8: incluye diagonales (recomendado)"
         )
         info_label.setStyleSheet(f"""
             QLabel {{
@@ -124,12 +144,30 @@ class SeccionComponentes(SeccionBase):
                     if img.max() == 1:
                         img = img * 255
                 
-                # Etiquetar componentes
-                num_labels, labels = etiquetar_componentes(img, conectividad)
+                # INVERTIR la imagen para que objetos oscuros sean detectados como componentes
+                img = cv2.bitwise_not(img)
+                
+                # Aplicar preprocesamiento si está activado
+                if morfo_checkbox.isChecked():
+                    img = preprocesar_imagen(img, usar_morfo=True, kernel_size=3)
+                
+                # Etiquetar componentes con estadísticas
+                num_labels, labels, stats, centroids = etiquetar_componentes(img, conectividad)
+                
+                # Filtrar componentes pequeñas
+                area_minima = area_spinbox.value()
+                if area_minima > 0:
+                    labels, eliminadas = filtrar_componentes_pequenas(labels, area_minima)
+                    num_labels = labels.max() + 1
+                else:
+                    eliminadas = 0
                 
                 # Guardar etiquetas y la imagen binaria original
                 self.etiquetas_actuales = labels
                 self.imagen_binaria_original = img
+                
+                # Obtener estadísticas detalladas
+                estadisticas = obtener_estadisticas_componentes(labels)
                 
                 # Mostrar resultado coloreado automáticamente
                 resultado = colorear_etiquetas(labels)
@@ -141,19 +179,32 @@ class SeccionComponentes(SeccionBase):
                 # Mensaje informativo detallado
                 num_componentes = num_labels - 1  # Restamos el fondo
                 self.ventana_principal.info_label.setText(
-                    f" Etiquetado completo: {num_componentes} componente(s) encontrada(s) | "
-                    f"Conectividad: {conectividad} | Imagen coloreada automáticamente"
+                    f" Etiquetado: {num_componentes} componente(s) | "
+                    f"Conectividad: {conectividad} | Filtradas: {eliminadas} | Coloreado automático"
                 )
                 
                 # Mostrar información adicional en consola
-                print(f"\n{'='*60}")
+                print(f"\n{'='*70}")
                 print(f"ANÁLISIS DE COMPONENTES CONEXAS")
-                print(f"{'='*60}")
-                print(f"Conectividad utilizada: {conectividad}")
-                print(f"Total de componentes (sin fondo): {num_componentes}")
-                print(f"Total de etiquetas (con fondo): {num_labels}")
-                print(f"Dimensiones de la imagen: {img.shape}")
-                print(f"{'='*60}\n")
+                print(f"{'='*70}")
+                print(f"Conectividad: {conectividad}")
+                print(f"Preprocesamiento morfológico: {'Sí' if morfo_checkbox.isChecked() else 'No'}")
+                print(f"Área mínima: {area_minima} px")
+                print(f"Componentes detectadas: {num_componentes}")
+                print(f"Componentes filtradas: {eliminadas}")
+                print(f"Dimensiones: {img.shape}")
+                print(f"\n{'='*70}")
+                print(f"ESTADÍSTICAS POR COMPONENTE:")
+                print(f"{'='*70}")
+                for stat in estadisticas:
+                    print(f"Componente {stat['etiqueta']}:")
+                    print(f"  Área: {stat['area']} px")
+                    print(f"  Perímetro: {stat['perimetro']:.2f} px")
+                    print(f"  Centroide: {stat['centroide']}")
+                    print(f"  Aspect Ratio: {stat['aspect_ratio']:.2f}")
+                    print(f"  Circularidad: {stat['circularidad']:.2f}")
+                    print(f"  BBox: {stat['bbox']}")
+                print(f"{'='*70}\n")
                 
                 dialogo.accept()
             except Exception as e:
@@ -181,79 +232,3 @@ class SeccionComponentes(SeccionBase):
                 f" Componentes coloreadas con paleta aleatoria | Total: {num_componentes} componente(s)")
         except Exception as e:
             QMessageBox.critical(self.ventana_principal, "Error", f"Error al colorear:\n{str(e)}")
-    
-    def extraer_mayor(self):
-        """Extrae la componente conexa más grande"""
-        if self.etiquetas_actuales is None:
-            QMessageBox.warning(self.ventana_principal, "Advertencia", 
-                               "Primero etiqueta las componentes usando el botón 'Etiquetar'.")
-            return
-        
-        try:
-            etiqueta_mayor = extraer_componente_mas_grande(self.etiquetas_actuales)
-            
-            if etiqueta_mayor is None:
-                QMessageBox.information(self.ventana_principal, "Información", 
-                                      "No se encontraron componentes (excepto fondo).")
-                return
-            
-            # Crear imagen binaria con solo la componente mayor
-            mascara = (self.etiquetas_actuales == etiqueta_mayor).astype(np.uint8) * 255
-            resultado = cv2.cvtColor(mascara, cv2.COLOR_GRAY2BGR)
-            
-            # Calcular área de la componente
-            area_pixeles = np.sum(self.etiquetas_actuales == etiqueta_mayor)
-            
-            self.ventana_principal.imagen_actual = resultado
-            self.ventana_principal._mostrar_imagen(self.ventana_principal.label_imagen_principal, 
-                                                   self.ventana_principal.imagen_actual)
-            self.ventana_principal.info_label.setText(
-                f" Componente más grande extraída | Etiqueta: {etiqueta_mayor} | Área: {area_pixeles} píxeles")
-        except Exception as e:
-            QMessageBox.critical(self.ventana_principal, "Error", f"Error al extraer:\n{str(e)}")
-    
-    def mostrar_regiones_numeradas(self):
-        """Dibuja regiones con numeros identificadores"""
-        if self.etiquetas_actuales is None:
-            QMessageBox.warning(self.ventana_principal, "Advertencia", 
-                               "Primero etiqueta las componentes usando el botón 'Etiquetar'.")
-            return
-        
-        try:
-            # Usar la imagen binaria original guardada
-            img_bin = self.imagen_binaria_original if self.imagen_binaria_original is not None else None
-            
-            resultado = dibujar_regiones_numeradas(self.etiquetas_actuales, img_bin)
-            
-            self.ventana_principal.imagen_actual = resultado
-            self.ventana_principal._mostrar_imagen(self.ventana_principal.label_imagen_principal, 
-                                                   self.ventana_principal.imagen_actual)
-            
-            num_componentes = int(self.etiquetas_actuales.max())
-            self.ventana_principal.info_label.setText(
-                f" Regiones numeradas y coloreadas | Total: {num_componentes} componente(s)")
-        except Exception as e:
-            QMessageBox.critical(self.ventana_principal, "Error", f"Error al dibujar regiones:\n{str(e)}")
-    
-    def comparar_segmentacion(self):
-        """Compara segmentación original con etiquetada"""
-        if self.etiquetas_actuales is None:
-            QMessageBox.warning(self.ventana_principal, "Advertencia", 
-                               "Primero etiqueta las componentes usando el botón 'Etiquetar'.")
-            return
-        
-        if self.imagen_binaria_original is None:
-            QMessageBox.warning(self.ventana_principal, "Advertencia", 
-                               "No hay imagen binaria original para comparar.")
-            return
-        
-        try:
-            resultado = comparar_segmentaciones(self.imagen_binaria_original, self.etiquetas_actuales)
-            
-            self.ventana_principal.imagen_actual = resultado
-            self.ventana_principal._mostrar_imagen(self.ventana_principal.label_imagen_principal, 
-                                                   self.ventana_principal.imagen_actual)
-            self.ventana_principal.info_label.setText(
-                " Comparación completada | Fronteras de componentes dibujadas en verde")
-        except Exception as e:
-            QMessageBox.critical(self.ventana_principal, "Error", f"Error al comparar:\n{str(e)}")

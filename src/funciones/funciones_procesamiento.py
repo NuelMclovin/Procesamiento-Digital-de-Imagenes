@@ -24,7 +24,10 @@ from .componentes_conexas import (
     extraer_componente_mas_grande,
     colorear_etiquetas,
     comparar_segmentaciones,
-    dibujar_regiones_numeradas
+    dibujar_regiones_numeradas,
+    preprocesar_imagen,
+    filtrar_componentes_pequenas,
+    obtener_estadisticas_componentes
 )
 
 # Importar funciones de ruido
