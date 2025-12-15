@@ -134,14 +134,20 @@ class DialogoBase(QDialog):
     def actualizar_imagen_seleccionada(self, resultado):
         """Actualiza la imagen seleccionada con el resultado."""
         if self.radio_img1.isChecked():
+            # Guardar estado antes de modificar
+            self.ventana_principal.guardar_estado('img1')
             self.ventana_principal.imagen_actual = resultado.copy()
             self.ventana_principal._mostrar_imagen(self.ventana_principal.label_imagen_principal, 
                                                    self.ventana_principal.imagen_actual)
         elif self.radio_img2.isChecked():
+            # Guardar estado antes de modificar
+            self.ventana_principal.guardar_estado('img2')
             self.ventana_principal.imagen_segunda = resultado.copy()
             self.ventana_principal._mostrar_imagen(self.ventana_principal.label_segunda, 
                                                    self.ventana_principal.imagen_segunda)
         else:
+            # Guardar estado antes de modificar
+            self.ventana_principal.guardar_estado('resultado')
             self.ventana_principal.imagen_resultado_logico = resultado.copy()
             self.ventana_principal.label_resultado_logico.setVisible(True)
             self.ventana_principal._mostrar_imagen(self.ventana_principal.label_resultado_logico, 

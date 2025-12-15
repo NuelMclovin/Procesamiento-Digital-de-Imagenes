@@ -75,6 +75,7 @@ class SeccionFiltros(SeccionBase):
             
             try:
                 resultado, mensaje = self._aplicar_filtro(imagen, tipo, params)
+                
                 dialogo.actualizar_imagen_seleccionada(resultado)
                 self.ventana_principal.info_label.setText(mensaje)
                 dialogo.accept()

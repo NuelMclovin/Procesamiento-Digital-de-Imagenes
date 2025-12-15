@@ -45,40 +45,52 @@ class SeccionBrillo(SeccionBase):
     
     def aplicar_ajuste_brillo(self, tipo):
         """Aplica técnicas de ajuste de brillo"""
-        if self.ventana_principal.imagen_actual is None:
-            QMessageBox.warning(self.ventana_principal, "Advertencia", "Primero carga una imagen.")
-            return
+        dialogo = DialogoBase(self.ventana_principal, f"Ecualización: {tipo.capitalize()}")
+        dialogo.agregar_selector_imagen(self.ventana_principal)
         
-        try:
-            if tipo == 'uniforme':
-                resultado = ecualizacion_uniforme(self.ventana_principal.imagen_actual)
-                self.ventana_principal.info_label.setText("Ecualización uniforme aplicada")
-            elif tipo == 'exponencial':
-                resultado = ecualizacion_exponencial(self.ventana_principal.imagen_actual)
-                self.ventana_principal.info_label.setText("Ecualización exponencial aplicada")
-            elif tipo == 'rayleigh':
-                resultado = ecualizacion_rayleigh(self.ventana_principal.imagen_actual)
-                self.ventana_principal.info_label.setText("Ecualización Rayleigh aplicada")
-            elif tipo == 'hipercubica':
-                resultado = ecualizacion_hipercubica(self.ventana_principal.imagen_actual)
-                self.ventana_principal.info_label.setText("Ecualización hipercúbica aplicada")
-            elif tipo == 'logaritmica':
-                resultado = ecualizacion_logaritmica_hiperbolica(self.ventana_principal.imagen_actual)
-                self.ventana_principal.info_label.setText("Ecualización logarítmica hiperbólica aplicada")
+        def aplicar():
+            imagen, label = dialogo.obtener_imagen_seleccionada()
+            if imagen is None:
+                return
             
-            # Convertir a BGR si es necesario para visualización
-            if len(resultado.shape) == 2:
-                resultado = cv2.cvtColor(resultado, cv2.COLOR_GRAY2BGR)
-            
-            self.ventana_principal.imagen_actual = resultado
-            self.ventana_principal._mostrar_imagen(self.ventana_principal.label_imagen_principal, 
-                                                   self.ventana_principal.imagen_actual)
-        except Exception as e:
-            QMessageBox.critical(self.ventana_principal, "Error", f"Error al aplicar ajuste:\n{str(e)}")
+            try:
+                if tipo == 'uniforme':
+                    resultado = ecualizacion_uniforme(imagen)
+                elif tipo == 'exponencial':
+                    resultado = ecualizacion_exponencial(imagen)
+                elif tipo == 'rayleigh':
+                    resultado = ecualizacion_rayleigh(imagen)
+                elif tipo == 'hipercubica':
+                    resultado = ecualizacion_hipercubica(imagen)
+                elif tipo == 'logaritmica':
+                    resultado = ecualizacion_logaritmica_hiperbolica(imagen)
+                
+                if len(resultado.shape) == 2:
+                    resultado = cv2.cvtColor(resultado, cv2.COLOR_GRAY2BGR)
+                
+                mensajes = {
+                    'uniforme': "Ecualización uniforme aplicada",
+                    'exponencial': "Ecualización exponencial aplicada",
+                    'rayleigh': "Ecualización Rayleigh aplicada",
+                    'hipercubica': "Ecualización hipercúbica aplicada",
+                    'logaritmica': "Ecualización logarítmica hiperbólica aplicada"
+                }
+                
+                mensaje = mensajes[tipo]
+                
+                dialogo.actualizar_imagen_seleccionada(resultado)
+                self.ventana_principal.info_label.setText(mensaje)
+                dialogo.accept()
+            except Exception as e:
+                QMessageBox.critical(self.ventana_principal, "Error", f"Error al aplicar ajuste:\n{str(e)}")
+        
+        dialogo.agregar_botones(aplicar)
+        dialogo.exec()
     
     def mostrar_dialogo_potencia(self):
         """Muestra diálogo para función potencia"""
         dialogo = DialogoBase(self.ventana_principal, "Función Potencia", 400)
+        dialogo.agregar_selector_imagen(self.ventana_principal)
         
         # Parámetro potencia
         potencia_layout = QHBoxLayout()
@@ -104,21 +116,20 @@ class SeccionBrillo(SeccionBase):
         dialogo.layout_principal.addLayout(potencia_layout)
         
         def aplicar():
-            if self.ventana_principal.imagen_actual is None:
-                QMessageBox.warning(dialogo, "Advertencia", "Primero carga una imagen.")
+            imagen, label = dialogo.obtener_imagen_seleccionada()
+            if imagen is None:
                 return
             
             try:
                 potencia_val = potencia_spin.value()
-                resultado = funcion_potencia(self.ventana_principal.imagen_actual, potencia_val)
-                
+                resultado = funcion_potencia(imagen, potencia_val)
                 if len(resultado.shape) == 2:
                     resultado = cv2.cvtColor(resultado, cv2.COLOR_GRAY2BGR)
                 
-                self.ventana_principal.imagen_actual = resultado
-                self.ventana_principal._mostrar_imagen(self.ventana_principal.label_imagen_principal, 
-                                                       self.ventana_principal.imagen_actual)
-                self.ventana_principal.info_label.setText(f"Función potencia aplicada (exp: {potencia_val:.2f})")
+                mensaje = f"Función potencia aplicada (exp: {potencia_val:.2f})"
+                
+                dialogo.actualizar_imagen_seleccionada(resultado)
+                self.ventana_principal.info_label.setText(mensaje)
                 dialogo.accept()
             except Exception as e:
                 QMessageBox.critical(dialogo, "Error", f"Error:\n{str(e)}")
@@ -129,6 +140,7 @@ class SeccionBrillo(SeccionBase):
     def mostrar_dialogo_gamma(self):
         """Muestra diálogo para corrección gamma"""
         dialogo = DialogoBase(self.ventana_principal, "Corrección Gamma", 400)
+        dialogo.agregar_selector_imagen(self.ventana_principal)
         
         # Parámetro gamma
         gamma_layout = QHBoxLayout()
@@ -154,21 +166,20 @@ class SeccionBrillo(SeccionBase):
         dialogo.layout_principal.addLayout(gamma_layout)
         
         def aplicar():
-            if self.ventana_principal.imagen_actual is None:
-                QMessageBox.warning(dialogo, "Advertencia", "Primero carga una imagen.")
+            imagen, label = dialogo.obtener_imagen_seleccionada()
+            if imagen is None:
                 return
             
             try:
                 gamma_val = gamma_spin.value()
-                resultado = correccion_gamma(self.ventana_principal.imagen_actual, gamma_val)
-                
+                resultado = correccion_gamma(imagen, gamma_val)
                 if len(resultado.shape) == 2:
                     resultado = cv2.cvtColor(resultado, cv2.COLOR_GRAY2BGR)
                 
-                self.ventana_principal.imagen_actual = resultado
-                self.ventana_principal._mostrar_imagen(self.ventana_principal.label_imagen_principal, 
-                                                       self.ventana_principal.imagen_actual)
-                self.ventana_principal.info_label.setText(f"Corrección gamma aplicada (γ={gamma_val:.2f})")
+                mensaje = f"Corrección gamma aplicada (γ={gamma_val:.2f})"
+                
+                dialogo.actualizar_imagen_seleccionada(resultado)
+                self.ventana_principal.info_label.setText(mensaje)
                 dialogo.accept()
             except Exception as e:
                 QMessageBox.critical(dialogo, "Error", f"Error:\n{str(e)}")

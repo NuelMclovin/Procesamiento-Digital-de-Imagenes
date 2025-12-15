@@ -37,11 +37,8 @@ class SeccionComponentes(SeccionBase):
     
     def mostrar_dialogo_etiquetar(self):
         """Muestra diálogo para etiquetar componentes conexas"""
-        if self.ventana_principal.imagen_actual is None:
-            QMessageBox.warning(self.ventana_principal, "Advertencia", "Primero carga una imagen.")
-            return
-        
         dialogo = DialogoBase(self.ventana_principal, "Etiquetar Componentes Conexas", 450)
+        dialogo.agregar_selector_imagen(self.ventana_principal)
         
         # Selector de conectividad
         conectividad_layout = QHBoxLayout()
@@ -125,12 +122,16 @@ class SeccionComponentes(SeccionBase):
         
         def aplicar():
             try:
+                imagen, label = dialogo.obtener_imagen_seleccionada()
+                if imagen is None:
+                    return
+                
                 # Extraer valor de conectividad del texto
                 texto_conectividad = conectividad_combo.currentText()
                 conectividad = 4 if texto_conectividad.startswith("4") else 8
                 
                 # Convertir a binaria si no lo está
-                img = self.ventana_principal.imagen_actual.copy()
+                img = imagen.copy()
                 
                 # Si es color, convertir a grises
                 if len(img.shape) == 3:
@@ -172,9 +173,8 @@ class SeccionComponentes(SeccionBase):
                 # Mostrar resultado coloreado automáticamente
                 resultado = colorear_etiquetas(labels)
                 
-                self.ventana_principal.imagen_actual = resultado
-                self.ventana_principal._mostrar_imagen(self.ventana_principal.label_imagen_principal, 
-                                                       self.ventana_principal.imagen_actual)
+                # Actualizar la imagen seleccionada
+                dialogo.actualizar_imagen_seleccionada(resultado)
                 
                 # Mensaje informativo detallado
                 num_componentes = num_labels - 1  # Restamos el fondo

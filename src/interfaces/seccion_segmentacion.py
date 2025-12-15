@@ -41,37 +41,49 @@ class SeccionSegmentacion(SeccionBase):
     
     def aplicar_segmentacion(self, tipo):
         """Aplica técnicas de segmentación"""
-        if self.ventana_principal.imagen_actual is None:
-            QMessageBox.warning(self.ventana_principal, "Advertencia", "Primero carga una imagen.")
-            return
+        dialogo = DialogoBase(self.ventana_principal, f"Segmentación: {tipo.capitalize()}")
+        dialogo.agregar_selector_imagen(self.ventana_principal)
         
-        try:
-            if tipo == 'otsu':
-                resultado, umbral = segmentacion_otsu(self.ventana_principal.imagen_actual)
-                self.ventana_principal.info_label.setText(f"Segmentación Otsu aplicada (umbral: {umbral:.2f})")
-            elif tipo == 'kapur':
-                resultado, umbral = segmentacion_kapur(self.ventana_principal.imagen_actual)
-                self.ventana_principal.info_label.setText(f"Segmentación Kapur aplicada (umbral: {umbral})")
-            elif tipo == 'minimo':
-                resultado, umbral = segmentacion_minimo_histograma(self.ventana_principal.imagen_actual)
-                self.ventana_principal.info_label.setText(f"Segmentación mínimo histograma aplicada (umbral: {umbral})")
-            elif tipo == 'media':
-                resultado, umbral = segmentacion_media(self.ventana_principal.imagen_actual)
-                self.ventana_principal.info_label.setText(f"Segmentación por media aplicada (umbral: {umbral:.2f})")
+        def aplicar():
+            imagen, label = dialogo.obtener_imagen_seleccionada()
+            if imagen is None:
+                return
             
-            # Convertir a BGR para visualización
-            if len(resultado.shape) == 2:
-                resultado = cv2.cvtColor(resultado, cv2.COLOR_GRAY2BGR)
-            
-            self.ventana_principal.imagen_actual = resultado
-            self.ventana_principal._mostrar_imagen(self.ventana_principal.label_imagen_principal, 
-                                                   self.ventana_principal.imagen_actual)
-        except Exception as e:
-            QMessageBox.critical(self.ventana_principal, "Error", f"Error al aplicar segmentación:\n{str(e)}")
+            try:
+                if tipo == 'otsu':
+                    resultado, _ = segmentacion_otsu(imagen)
+                elif tipo == 'kapur':
+                    resultado, _ = segmentacion_kapur(imagen)
+                elif tipo == 'minimo':
+                    resultado, _ = segmentacion_minimo_histograma(imagen)
+                elif tipo == 'media':
+                    resultado, _ = segmentacion_media(imagen)
+                
+                if len(resultado.shape) == 2:
+                    resultado = cv2.cvtColor(resultado, cv2.COLOR_GRAY2BGR)
+                
+                mensajes = {
+                    'otsu': "Segmentación Otsu aplicada",
+                    'kapur': "Segmentación Kapur aplicada",
+                    'minimo': "Segmentación mínimo histograma aplicada",
+                    'media': "Segmentación por media aplicada"
+                }
+                
+                mensaje = mensajes[tipo]
+                
+                dialogo.actualizar_imagen_seleccionada(resultado)
+                self.ventana_principal.info_label.setText(mensaje)
+                dialogo.accept()
+            except Exception as e:
+                QMessageBox.critical(self.ventana_principal, "Error", f"Error al aplicar segmentación:\n{str(e)}")
+        
+        dialogo.agregar_botones(aplicar)
+        dialogo.exec()
     
     def mostrar_dialogo_segmentacion_multi(self):
         """Muestra diálogo para segmentación por múltiples umbrales"""
         dialogo = DialogoBase(self.ventana_principal, "Segmentación Múltiples Umbrales", 400)
+        dialogo.agregar_selector_imagen(self.ventana_principal)
         
         # Umbral 1
         t1_layout = QHBoxLayout()
@@ -118,8 +130,8 @@ class SeccionSegmentacion(SeccionBase):
         dialogo.layout_principal.addLayout(t2_layout)
         
         def aplicar():
-            if self.ventana_principal.imagen_actual is None:
-                QMessageBox.warning(dialogo, "Advertencia", "Primero carga una imagen.")
+            imagen, label = dialogo.obtener_imagen_seleccionada()
+            if imagen is None:
                 return
             
             try:
@@ -130,15 +142,14 @@ class SeccionSegmentacion(SeccionBase):
                     QMessageBox.warning(dialogo, "Advertencia", "T1 debe ser menor que T2")
                     return
                 
-                resultado = segmentacion_multiples_umbrales(self.ventana_principal.imagen_actual, T1, T2)
-                
+                resultado = segmentacion_multiples_umbrales(imagen, T1, T2)
                 if len(resultado.shape) == 2:
                     resultado = cv2.cvtColor(resultado, cv2.COLOR_GRAY2BGR)
                 
-                self.ventana_principal.imagen_actual = resultado
-                self.ventana_principal._mostrar_imagen(self.ventana_principal.label_imagen_principal, 
-                                                       self.ventana_principal.imagen_actual)
-                self.ventana_principal.info_label.setText(f"Segmentación múltiples umbrales (T1: {T1}, T2: {T2})")
+                mensaje = f"Segmentación múltiples umbrales (T1: {T1}, T2: {T2})"
+                
+                dialogo.actualizar_imagen_seleccionada(resultado)
+                self.ventana_principal.info_label.setText(mensaje)
                 dialogo.accept()
             except Exception as e:
                 QMessageBox.critical(dialogo, "Error", f"Error:\n{str(e)}")
@@ -149,6 +160,7 @@ class SeccionSegmentacion(SeccionBase):
     def mostrar_dialogo_segmentacion_banda(self):
         """Muestra diálogo para segmentación por umbral banda"""
         dialogo = DialogoBase(self.ventana_principal, "Segmentación Umbral Banda", 400)
+        dialogo.agregar_selector_imagen(self.ventana_principal)
         
         # Umbral inferior
         t1_layout = QHBoxLayout()
@@ -195,8 +207,8 @@ class SeccionSegmentacion(SeccionBase):
         dialogo.layout_principal.addLayout(t2_layout)
         
         def aplicar():
-            if self.ventana_principal.imagen_actual is None:
-                QMessageBox.warning(dialogo, "Advertencia", "Primero carga una imagen.")
+            imagen, label = dialogo.obtener_imagen_seleccionada()
+            if imagen is None:
                 return
             
             try:
@@ -207,15 +219,14 @@ class SeccionSegmentacion(SeccionBase):
                     QMessageBox.warning(dialogo, "Advertencia", "T1 debe ser menor que T2")
                     return
                 
-                resultado = segmentacion_umbral_banda(self.ventana_principal.imagen_actual, T1, T2)
-                
+                resultado = segmentacion_umbral_banda(imagen, T1, T2)
                 if len(resultado.shape) == 2:
                     resultado = cv2.cvtColor(resultado, cv2.COLOR_GRAY2BGR)
                 
-                self.ventana_principal.imagen_actual = resultado
-                self.ventana_principal._mostrar_imagen(self.ventana_principal.label_imagen_principal, 
-                                                       self.ventana_principal.imagen_actual)
-                self.ventana_principal.info_label.setText(f"Segmentación umbral banda (T1: {T1}, T2: {T2})")
+                mensaje = f"Segmentación umbral banda (T1: {T1}, T2: {T2})"
+                
+                dialogo.actualizar_imagen_seleccionada(resultado)
+                self.ventana_principal.info_label.setText(mensaje)
                 dialogo.accept()
             except Exception as e:
                 QMessageBox.critical(dialogo, "Error", f"Error:\n{str(e)}")

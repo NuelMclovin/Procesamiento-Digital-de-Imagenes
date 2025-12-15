@@ -23,6 +23,9 @@ class SeccionArchivo(SeccionBase):
         self.crear_boton("Guardar", COLOR_EXITO, 
                         self.ventana_principal.guardar_resultado)
         
+        self.crear_boton("Deshacer", "#FF9800", 
+                        self.ventana_principal.deshacer)
+        
         self.crear_boton("Resetear", COLOR_ERROR, 
                         self.ventana_principal.resetear_imagen)
         

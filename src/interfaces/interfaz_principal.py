@@ -48,6 +48,7 @@ from src.interfaces.seccion_umbral import SeccionUmbral
 from src.interfaces.seccion_brillo import SeccionBrillo
 from src.interfaces.seccion_segmentacion import SeccionSegmentacion
 from src.interfaces.seccion_componentes import SeccionComponentes
+from src.interfaces.seccion_morfologia import SeccionMorfologia
 from src.interfaces.seccion_modos import SeccionModos
 
 
@@ -65,6 +66,13 @@ class VentanaPrincipal(QMainWindow):
         self.imagen_segunda_backup = None  # Backup de segunda imagen
         self.imagen_resultado_logico = None  # Resultado de operaciones lógicas
         self.modo_actual = 'color'  # 'color', 'grises', 'binaria'
+        
+        # Historial para deshacer (undo) - pilas de máximo 10 estados
+        self.historial_img1 = []  # Historial de Imagen 1
+        self.historial_img2 = []  # Historial de Imagen 2
+        self.historial_resultado = []  # Historial de Resultado
+        self.max_historial = 10  # Límite de estados guardados
+        
         self.init_ui()
     
     def init_ui(self):
@@ -154,6 +162,9 @@ class VentanaPrincipal(QMainWindow):
         
         panel_layout.addWidget(self._crear_separador_horizontal())
         panel_layout.addWidget(SeccionComponentes(self))
+        
+        panel_layout.addWidget(self._crear_separador_horizontal())
+        panel_layout.addWidget(SeccionMorfologia(self))
         
         panel_layout.addWidget(self._crear_separador_horizontal())
         panel_layout.addWidget(SeccionModos(self))
@@ -759,6 +770,65 @@ class VentanaPrincipal(QMainWindow):
             self._mostrar_imagen(self.label_segunda, self.imagen_segunda)
         
         self.info_label.setText(f"Modo cambiado a: {nuevo_modo.upper()}")
+    
+    def guardar_estado(self, imagen_objetivo):
+        """Guarda el estado actual de la imagen antes de aplicar una operación.
+        
+        Args:
+            imagen_objetivo: 'img1', 'img2', o 'resultado'
+        """
+        if imagen_objetivo == 'img1' and self.imagen_actual is not None:
+            # Guardar en historial de imagen 1
+            self.historial_img1.append(self.imagen_actual.copy())
+            # Limitar tamaño del historial
+            if len(self.historial_img1) > self.max_historial:
+                self.historial_img1.pop(0)
+        
+        elif imagen_objetivo == 'img2' and self.imagen_segunda is not None:
+            # Guardar en historial de imagen 2
+            self.historial_img2.append(self.imagen_segunda.copy())
+            if len(self.historial_img2) > self.max_historial:
+                self.historial_img2.pop(0)
+        
+        elif imagen_objetivo == 'resultado' and self.imagen_resultado_logico is not None:
+            # Guardar en historial de resultado
+            self.historial_resultado.append(self.imagen_resultado_logico.copy())
+            if len(self.historial_resultado) > self.max_historial:
+                self.historial_resultado.pop(0)
+    
+    def deshacer(self):
+        """Deshace la última operación realizada en cualquiera de las imágenes."""
+        # Verificar qué imagen tiene historial más reciente
+        cambio_realizado = False
+        
+        # Intentar deshacer en imagen 1
+        if self.historial_img1:
+            self.imagen_actual = self.historial_img1.pop()
+            self._mostrar_imagen(self.label_imagen_principal, self.imagen_actual)
+            self.info_label.setText(f"Deshacer aplicado en Imagen 1 ({len(self.historial_img1)} estados disponibles)")
+            cambio_realizado = True
+        
+        # Si no hay en img1, intentar en img2
+        elif self.historial_img2:
+            self.imagen_segunda = self.historial_img2.pop()
+            self._mostrar_imagen(self.label_segunda, self.imagen_segunda)
+            self.info_label.setText(f"Deshacer aplicado en Imagen 2 ({len(self.historial_img2)} estados disponibles)")
+            cambio_realizado = True
+        
+        # Si no hay en ninguna, intentar en resultado
+        elif self.historial_resultado:
+            self.imagen_resultado_logico = self.historial_resultado.pop()
+            if self.imagen_resultado_logico is not None:
+                self.label_resultado_logico.setVisible(True)
+                self._mostrar_imagen(self.label_resultado_logico, self.imagen_resultado_logico)
+            else:
+                self.label_resultado_logico.setVisible(False)
+            self.info_label.setText(f"Deshacer aplicado en Resultado ({len(self.historial_resultado)} estados disponibles)")
+            cambio_realizado = True
+        
+        if not cambio_realizado:
+            from PySide6.QtWidgets import QMessageBox
+            QMessageBox.information(self, "Deshacer", "No hay operaciones para deshacer")
 
 
 

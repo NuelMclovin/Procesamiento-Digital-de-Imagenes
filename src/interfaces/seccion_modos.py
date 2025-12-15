@@ -63,9 +63,10 @@ class SeccionModos(SeccionBase):
                     else:
                         resultado = imagen.copy()
                 
-                dialogo.actualizar_imagen_seleccionada(resultado)
+                mensaje = f"Modo cambiado a {nombres[modo]}"
                 
-                QMessageBox.information(dialogo, "Éxito", f"Modo cambiado a {nombres[modo]}")
+                dialogo.actualizar_imagen_seleccionada(resultado)
+                self.ventana_principal.info_label.setText(mensaje)
                 dialogo.accept()
                 
             except Exception as e:

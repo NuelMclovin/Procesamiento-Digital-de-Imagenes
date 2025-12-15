@@ -109,14 +109,15 @@ class SeccionRuido(SeccionBase):
                 if tipo == 'sal_pimienta':
                     cantidad = params['cantidad'].value()
                     resultado = agregar_ruido_sal_pimienta(imagen, cantidad)
-                    self.ventana_principal.info_label.setText(f"Ruido sal/pimienta agregado (cantidad: {cantidad})")
+                    mensaje = f"Ruido sal/pimienta agregado (cantidad: {cantidad})"
                 else:
                     media = params['media'].value()
                     sigma = params['sigma'].value()
                     resultado = agregar_ruido_gaussiano(imagen, media, sigma)
-                    self.ventana_principal.info_label.setText(f"Ruido gaussiano agregado (μ={media}, σ={sigma})")
+                    mensaje = f"Ruido gaussiano agregado (μ={media}, σ={sigma})"
                 
                 dialogo.actualizar_imagen_seleccionada(resultado)
+                self.ventana_principal.info_label.setText(mensaje)
                 dialogo.accept()
             except Exception as e:
                 QMessageBox.critical(self.ventana_principal, "Error", f"Error:\n{str(e)}")

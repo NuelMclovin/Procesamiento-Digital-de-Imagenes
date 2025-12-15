@@ -108,3 +108,30 @@ class SeccionBase(QWidget):
         btn.clicked.connect(callback)
         self.contenedor_layout.addWidget(btn)
         return btn
+    
+    def aplicar_a_imagenes(self, dialogo, funcion_procesamiento):
+        """
+        Aplica una función de procesamiento a la(s) imagen(es) seleccionada(s).
+        
+        Args:
+            dialogo: El diálogo que contiene el selector de imagen
+            funcion_procesamiento: Función que recibe una imagen y retorna el resultado procesado
+        
+        Returns:
+            resultado procesado (imagen única o lista de imágenes)
+        """
+        imagen, label = dialogo.obtener_imagen_seleccionada()
+        
+        if imagen is None:
+            return None
+        
+        # Si se seleccionó "Ambas"
+        if imagen == 'ambas':
+            resultados = []
+            for img, lbl in label:
+                resultado = funcion_procesamiento(img)
+                resultados.append(resultado)
+            return resultados
+        else:
+            # Una sola imagen
+            return funcion_procesamiento(imagen)

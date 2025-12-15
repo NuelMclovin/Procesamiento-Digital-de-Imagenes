@@ -12,6 +12,7 @@ Integra todas las funcionalidades de procesamiento de imágenes:
 - Ajuste de brillo (7 técnicas de ecualización)
 - Segmentación (6 técnicas de umbralización)
 - Análisis de componentes conexas (etiquetado y coloreo)
+- Morfología matemática (9 operaciones morfológicas)
 """
 
 import sys

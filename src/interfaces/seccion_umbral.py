@@ -111,14 +111,15 @@ class SeccionUmbral(SeccionBase):
                 if tipo == 'fijo':
                     umbral_val = params['umbral'].value()
                     resultado = umbral_fijo(imagen, umbral_val)
-                    self.ventana_principal.info_label.setText(f"Umbral fijo aplicado (valor: {umbral_val})")
+                    mensaje = f"Umbral fijo aplicado (valor: {umbral_val})"
                 else:
                     block_size = int(params['block_size'].currentText())
                     C = params['C'].value()
                     resultado = umbral_adaptativo(imagen, block_size, C)
-                    self.ventana_principal.info_label.setText(f"Umbral adaptativo aplicado (block: {block_size}, C: {C})")
+                    mensaje = f"Umbral adaptativo aplicado (block: {block_size}, C: {C})"
                 
                 dialogo.actualizar_imagen_seleccionada(resultado)
+                self.ventana_principal.info_label.setText(mensaje)
                 dialogo.accept()
             except Exception as e:
                 QMessageBox.critical(self.ventana_principal, "Error", f"Error:\n{str(e)}")

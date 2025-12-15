@@ -65,8 +65,10 @@ class SeccionAritmetica(SeccionBase):
             try:
                 valor = valor_spin.value()
                 resultado = operacion_escalar(imagen, valor, operacion)
+                mensaje = f"{operacion.upper()} aplicada con valor {valor}"
+                
                 dialogo.actualizar_imagen_seleccionada(resultado)
-                self.ventana_principal.info_label.setText(f"{operacion.upper()} aplicada con valor {valor}")
+                self.ventana_principal.info_label.setText(mensaje)
                 dialogo.accept()
             except Exception as e:
                 QMessageBox.critical(self.ventana_principal, "Error", f"Error al aplicar operación:\n{str(e)}")

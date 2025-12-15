@@ -76,6 +76,12 @@ from .funciones_segmentacion import (
     segmentacion_umbral_banda
 )
 
+# Segmentación de objetos
+from .segmentacion_objetos import (
+    segmentar_botella_doble_mascara,
+    ResultadoSegmentacionBotella,
+)
+
 
 # Exportar todo para mantener compatibilidad
 __all__ = [
@@ -130,7 +136,11 @@ __all__ = [
     "segmentacion_minimo_histograma",
     "segmentacion_media",
     "segmentacion_multiples_umbrales",
-    "segmentacion_umbral_banda"
+    "segmentacion_umbral_banda",
+
+    # Objetos (botella)
+    "segmentar_botella_doble_mascara",
+    "ResultadoSegmentacionBotella",
 ]
 
 
